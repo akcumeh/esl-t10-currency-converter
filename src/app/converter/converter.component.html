@@ -1,0 +1,81 @@
+<div class="converter-container">
+  <form [formGroup]="converterForm" (ngSubmit)="onSubmit($event)" class="converter-form">
+    
+    <!-- Amount Input -->
+    <mat-form-field appearance="outline" class="amount-field">
+      <mat-label>Amount</mat-label>
+      <input 
+        matInput 
+        type="text" 
+        formControlName="amount" 
+        placeholder="Enter amount"
+        (keydown.enter)="onConvert()"
+      />
+      <mat-error *ngIf="converterForm.get('amount')?.hasError('required')">
+        Amount is required
+      </mat-error>
+      <mat-error *ngIf="converterForm.get('amount')?.hasError('pattern')">
+        Please enter a valid number
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Currency Selection Row -->
+    <div class="currency-row">
+      <!-- From Currency -->
+      <mat-form-field appearance="outline" class="currency-field">
+        <mat-label>From</mat-label>
+        <mat-select formControlName="fromCurrency">
+          <mat-option *ngFor="let currency of currencies" [value]="currency.code">
+            {{currency.code}} - {{currency.name}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Exchange Icon -->
+      <div class="exchange-icon">
+        <span class="material-symbols-outlined">swap_horiz</span>
+      </div>
+
+      <!-- To Currency -->
+      <mat-form-field appearance="outline" class="currency-field">
+        <mat-label>To</mat-label>
+        <mat-select formControlName="toCurrency">
+          <mat-option *ngFor="let currency of currencies" [value]="currency.code">
+            {{currency.code}} - {{currency.name}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- Output Field -->
+    <mat-form-field appearance="outline" class="output-field">
+      <mat-label>Converted Amount</mat-label>
+      <input 
+        matInput 
+        type="text" 
+        [value]="convertedValue" 
+        readonly 
+        disabled
+        placeholder="0.00"
+      />
+    </mat-form-field>
+
+    <!-- Convert Button -->
+    <button 
+      mat-raised-button 
+      color="primary" 
+      type="submit"
+      class="convert-button"
+      [disabled]="!converterForm.valid || isLoading"
+    >
+      <span *ngIf="!isLoading">Convert</span>
+      <span *ngIf="isLoading">Converting...</span>
+    </button>
+
+    <!-- Error Message -->
+    <div *ngIf="converterForm.get('fromCurrency')?.value === converterForm.get('toCurrency')?.value" class="error-message">
+      Please select different currencies for conversion
+    </div>
+
+  </form>
+</div>

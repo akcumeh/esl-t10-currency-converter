@@ -1,0 +1,113 @@
+.converter-container {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-family: 'Poppins', sans-serif;
+}
+
+.converter-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.amount-field,
+.output-field {
+  width: 100%;
+}
+
+.currency-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+}
+
+.currency-field {
+  flex: 1;
+  min-width: 200px;
+
+  @media (max-width: 640px) {
+    width: 100%;
+    min-width: unset;
+  }
+}
+
+.exchange-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  min-width: 40px;
+
+  mat-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+
+  @media (max-width: 640px) {
+    transform: rotate(90deg);
+    margin: 0.5rem 0;
+  }
+}
+
+.convert-button {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  min-height: 48px;
+}
+
+.error-message {
+  color: #f44336;
+  font-size: 14px;
+  text-align: center;
+  padding: 0.5rem;
+  background: #ffebee;
+  border-radius: 4px;
+  border: 1px solid #ffcdd2;
+}
+
+@media (min-width: 641px) {
+  .converter-form {
+    gap: 2rem;
+  }
+
+  .currency-row {
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .exchange-icon {
+    margin-top: 0.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .converter-container {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+
+  .converter-form {
+    gap: 1rem;
+  }
+}
+
+.output-field {
+  .mat-mdc-form-field-input-control input[disabled] {
+    color: #666 !important;
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+  }
+}
