@@ -5,8 +5,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CommonModule } from '@angular/common';
 import { CurrencyService } from '../services/currency.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-converter',
@@ -17,7 +19,8 @@ import { CurrencyService } from '../services/currency.service';
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    MatProgressSpinnerModule
   ],
   templateUrl: './converter.component.html',
   styleUrl: './converter.component.scss'
@@ -36,6 +39,7 @@ export class ConverterComponent {
   ];
   convertedValue: string = '';
   isLoading: boolean = false;
+  loading$: Observable<boolean>;
 
   constructor() {
     this.converterForm = this.fb.group({
@@ -44,6 +48,8 @@ export class ConverterComponent {
       toCurrency: ['EUR', Validators.required]
     });
 
+    this.loading$ = this.currencyService.loading$;
+    
     this.converterForm.get('amount')?.valueChanges.subscribe(() => {
       this.currencyService.startFetching();
     });
@@ -54,22 +60,17 @@ export class ConverterComponent {
       const { amount, fromCurrency, toCurrency } = this.converterForm.value;
       
       if (fromCurrency === toCurrency) {
-        this.convertedValue = amount;
         return;
       }
 
-      this.isLoading = true;
-      
       const numericAmount = parseFloat(amount);
       const result = this.currencyService.convert(fromCurrency, toCurrency, numericAmount);
       
       if (result > 0) {
         this.convertedValue = result.toFixed(2);
       } else {
-        this.convertedValue = 'Rates not available';
+        this.convertedValue = '';
       }
-      
-      this.isLoading = false;
     }
   }
 

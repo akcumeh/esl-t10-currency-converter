@@ -1,7 +1,6 @@
 <div class="converter-container">
   <form [formGroup]="converterForm" (ngSubmit)="onSubmit($event)" class="converter-form">
     
-    <!-- Amount Input -->
     <mat-form-field appearance="outline" class="amount-field">
       <mat-label>Amount</mat-label>
       <input 
@@ -19,9 +18,7 @@
       </mat-error>
     </mat-form-field>
 
-    <!-- Currency Selection Row -->
     <div class="currency-row">
-      <!-- From Currency -->
       <mat-form-field appearance="outline" class="currency-field">
         <mat-label>From</mat-label>
         <mat-select formControlName="fromCurrency">
@@ -31,12 +28,10 @@
         </mat-select>
       </mat-form-field>
 
-      <!-- Exchange Icon -->
       <div class="exchange-icon">
         <span class="material-symbols-outlined">swap_horiz</span>
       </div>
 
-      <!-- To Currency -->
       <mat-form-field appearance="outline" class="currency-field">
         <mat-label>To</mat-label>
         <mat-select formControlName="toCurrency">
@@ -47,9 +42,8 @@
       </mat-form-field>
     </div>
 
-    <!-- Output Field -->
     <mat-form-field appearance="outline" class="output-field">
-      <mat-label>Converted Amount</mat-label>
+      <mat-label>Converts To</mat-label>
       <input 
         matInput 
         type="text" 
@@ -58,18 +52,20 @@
         disabled
         placeholder="0.00"
       />
+      <div matSuffix *ngIf="loading$ | async" class="spinner-container">
+        <mat-spinner diameter="20"></mat-spinner>
+      </div>
     </mat-form-field>
 
-    <!-- Convert Button -->
     <button 
       mat-raised-button 
       color="primary" 
       type="submit"
       class="convert-button"
-      [disabled]="!converterForm.valid || isLoading"
+      [disabled]="!converterForm.valid || (loading$ | async) || converterForm.get('fromCurrency')?.value === converterForm.get('toCurrency')?.value"
     >
-      <span *ngIf="!isLoading">Convert</span>
-      <span *ngIf="isLoading">Converting...</span>
+      <span *ngIf="!(loading$ | async)">Convert</span>
+      <span *ngIf="loading$ | async">Loading rates...</span>
     </button>
 
     <!-- Error Message -->

@@ -1,5 +1,5 @@
 .converter-container {
-  max-width: 600px;
+  max-width: 80vw;
   margin: 2rem auto;
   padding: 2rem;
   background: #fff;
@@ -110,4 +110,10 @@
     background-color: #f5f5f5;
     cursor: not-allowed;
   }
+}
+
+.spinner-container {
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
 }

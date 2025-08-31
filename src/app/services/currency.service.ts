@@ -1,6 +1,7 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, interval, Observable, map, catchError, of } from 'rxjs';
+import { BehaviorSubject, interval, Observable, map, catchError, of, retry, timer, switchMap } from 'rxjs';
+import { isPlatformBrowser } from '@angular/common';
 import { environment } from '../../environments/environment';
 
 interface ExchangeRatesResponse {
@@ -20,18 +21,48 @@ interface CurrencyRates {
 })
 export class CurrencyService {
   http = inject(HttpClient);
+  platformId = inject(PLATFORM_ID);
   ratesSubject = new BehaviorSubject<CurrencyRates>({});
+  loadingSubject = new BehaviorSubject<boolean>(false);
   supportedCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'NGN'];
+  intervalSubscription: any;
   
   rates$ = this.ratesSubject.asObservable();
+  loading$ = this.loadingSubject.asObservable();
 
   constructor() {
+    this.loadStoredRates();
+    if (isPlatformBrowser(this.platformId) && Object.keys(this.ratesSubject.value).length === 0) {
+      this.fetchRatesWithRetry();
+    }
+  }
+
+  loadStoredRates(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    const stored = localStorage.getItem('currency-rates');
+    const lastFetch = localStorage.getItem('last-fetch-time');
+    
+    if (stored && lastFetch) {
+      const rates = JSON.parse(stored);
+      this.ratesSubject.next(rates);
+      
+      const hoursSinceLastFetch = (Date.now() - parseInt(lastFetch)) / (1000 * 60 * 60);
+      if (hoursSinceLastFetch >= 1) {
+        this.fetchRates();
+      }
+    }
   }
 
   startFetching(): void {
     if (Object.keys(this.ratesSubject.value).length === 0) {
-      this.fetchRates();
-      interval(3600000).subscribe(() => this.fetchRates());
+      this.fetchRatesWithRetry();
+    }
+    
+    if (!this.intervalSubscription) {
+      this.intervalSubscription = interval(3600000).subscribe(() => this.fetchRatesWithRetry());
     }
   }
 
@@ -43,7 +74,38 @@ export class CurrencyService {
         map(response => this.processRates(response.rates)),
         catchError(() => of({}))
       )
-      .subscribe(rates => this.ratesSubject.next(rates));
+      .subscribe(rates => {
+        if (Object.keys(rates).length > 0) {
+          this.ratesSubject.next(rates);
+          this.loadingSubject.next(false);
+          if (isPlatformBrowser(this.platformId)) {
+            localStorage.setItem('currency-rates', JSON.stringify(rates));
+            localStorage.setItem('last-fetch-time', Date.now().toString());
+          }
+        }
+      });
+  }
+
+  fetchRatesWithRetry(): void {
+    this.loadingSubject.next(true);
+    const url = `${environment.openExchangeRatesApiUrl}?app_id=${environment.openExchangeRatesApiKey}`;
+    
+    timer(0, 5000)
+      .pipe(
+        switchMap(() => this.http.get<ExchangeRatesResponse>(url)),
+        map(response => this.processRates(response.rates)),
+        catchError(() => of(null))
+      )
+      .subscribe(rates => {
+        if (rates && Object.keys(rates).length > 0) {
+          this.ratesSubject.next(rates);
+          this.loadingSubject.next(false);
+          if (isPlatformBrowser(this.platformId)) {
+            localStorage.setItem('currency-rates', JSON.stringify(rates));
+            localStorage.setItem('last-fetch-time', Date.now().toString());
+          }
+        }
+      });
   }
 
   processRates(usdRates: { [currency: string]: number }): CurrencyRates {
