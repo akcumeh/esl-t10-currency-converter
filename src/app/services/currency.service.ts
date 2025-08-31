@@ -67,7 +67,7 @@ export class CurrencyService {
   }
 
   fetchRates(): void {
-    const url = `${environment.openExchangeRatesApiUrl}?app_id=${environment.openExchangeRatesApiKey}`;
+    const url = environment.exchangeRatesApiUrl;
     
     this.http.get<ExchangeRatesResponse>(url)
       .pipe(
@@ -88,7 +88,7 @@ export class CurrencyService {
 
   fetchRatesWithRetry(): void {
     this.loadingSubject.next(true);
-    const url = `${environment.openExchangeRatesApiUrl}?app_id=${environment.openExchangeRatesApiKey}`;
+    const url = environment.exchangeRatesApiUrl;
     
     timer(0, 5000)
       .pipe(
