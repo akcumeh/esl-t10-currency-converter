@@ -1,4 +1,5 @@
 export const environment = {
   production: true,
-  exchangeRatesApiUrl: '/.netlify/functions/exchange-rates'
+  exchangeRatesApiUrl: 'https://openexchangerates.org/api/latest.json',
+  openExchangeRatesApiKey: ''
 };

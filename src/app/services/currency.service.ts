@@ -1,6 +1,6 @@
 import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, interval, Observable, map, catchError, of, retry, timer, switchMap } from 'rxjs';
+import { BehaviorSubject, interval, Observable, map, catchError, of, retry, timer, switchMap, takeUntil, filter } from 'rxjs';
 import { isPlatformBrowser } from '@angular/common';
 import { environment } from '../../environments/environment';
 
@@ -26,6 +26,7 @@ export class CurrencyService {
   loadingSubject = new BehaviorSubject<boolean>(false);
   supportedCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'NGN'];
   intervalSubscription: any;
+  retrySubscription: any;
   
   rates$ = this.ratesSubject.asObservable();
   loading$ = this.loadingSubject.asObservable();
@@ -67,12 +68,15 @@ export class CurrencyService {
   }
 
   fetchRates(): void {
-    const url = environment.exchangeRatesApiUrl;
+    const url = `${environment.exchangeRatesApiUrl}?app_id=${environment.openExchangeRatesApiKey}`;
     
     this.http.get<ExchangeRatesResponse>(url)
       .pipe(
         map(response => this.processRates(response.rates)),
-        catchError(() => of({}))
+        catchError((error) => {
+          console.error('Error fetching exchange rates (single):', error);
+          return of({});
+        })
       )
       .subscribe(rates => {
         if (Object.keys(rates).length > 0) {
@@ -87,23 +91,39 @@ export class CurrencyService {
   }
 
   fetchRatesWithRetry(): void {
-    this.loadingSubject.next(true);
-    const url = environment.exchangeRatesApiUrl;
+    if (this.retrySubscription) {
+      this.retrySubscription.unsubscribe();
+    }
     
-    timer(0, 5000)
+    this.loadingSubject.next(true);
+    const url = `${environment.exchangeRatesApiUrl}?app_id=${environment.openExchangeRatesApiKey}`;
+    
+    this.retrySubscription = timer(0, 5000)
       .pipe(
         switchMap(() => this.http.get<ExchangeRatesResponse>(url)),
         map(response => this.processRates(response.rates)),
-        catchError(() => of(null))
+        catchError((error) => {
+          console.error('Error fetching exchange rates:', error);
+          return of(null);
+        })
       )
       .subscribe(rates => {
+        console.log('Received rates:', rates);
         if (rates && Object.keys(rates).length > 0) {
+          console.log('Setting rates and stopping loading');
           this.ratesSubject.next(rates);
           this.loadingSubject.next(false);
           if (isPlatformBrowser(this.platformId)) {
             localStorage.setItem('currency-rates', JSON.stringify(rates));
             localStorage.setItem('last-fetch-time', Date.now().toString());
           }
+          // Stop retrying once we get successful data
+          if (this.retrySubscription) {
+            this.retrySubscription.unsubscribe();
+            this.retrySubscription = null;
+          }
+        } else {
+          console.log('No rates received, continuing to retry...');
         }
       });
   }
